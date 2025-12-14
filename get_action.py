@@ -80,20 +80,23 @@ def get_eeg_action(event_id):
     epoch = ALL_EPOCHS[random_index]
     X_train, _ = get_freq(epoch)
     classification = classifier.predict(X_train)
-    print("true event: " + str(event_id))
-    print("predicted "+ str(classification))
+
+    all_events_id = {1: 'Relax', 2: 'Left', 3: 'Right', 4: 'Both', 5: 'Feet'}
+
+    print("true event: " + str(all_events_id[event_id]))
+    print("predicted "+ str(all_events_id[classification[0]]))
 
     steer = 0
     gas = 0
     brake = 0
     if classification == 1:  # relaks
         pass
-    elif classification == 2:  # Left
-        steer = -1
+    elif classification == 2:  # Lefts
+        steer = -0.1
     elif classification == 3:  # Right
-        steer = 1
+        steer = 0.1
     elif classification == 4:  # Both hands
-        gas = 0.5
+        gas = 0.1
     elif classification == 5:  # Both feet
         brake = 1
 

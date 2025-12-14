@@ -2,31 +2,40 @@ import gymnasium as gym
 import pygame
 from get_action import get_eeg_action
 
+pygame.init()
 
-def get_action():
-
+def read_event_id():
+    pygame.event.pump()
     keys = pygame.key.get_pressed()
-    event_id = 1
     if keys[pygame.K_LEFT]:
-        event_id = 2
+        return 2
     if keys[pygame.K_RIGHT]:
-        event_id = 3
+        return 3
     if keys[pygame.K_UP]:
-        event_id = 4
+        return 4
     if keys[pygame.K_DOWN]:
-        event_id = 5
+        return 5
+    return 1
 
-    eeg_action = get_eeg_action(event_id)
-    return eeg_action
-
-env = gym.make('CarRacing-v3', render_mode='human')
-
+env = gym.make("CarRacing-v3", render_mode="human")
 obs, info = env.reset()
+
 done = False
+last_action = [0.0, 0.0, 0.0]
+
+INTERVAL_MS = 1000
+next_update = pygame.time.get_ticks()
 
 while not done:
-    action = get_action()
-    obs, reward, terminated, truncated, info = env.step(action)
+    now = pygame.time.get_ticks()
+
+    if now >= next_update:
+        event_id = read_event_id()
+        last_action = get_eeg_action(event_id)
+        next_update = now + INTERVAL_MS
+
+    obs, reward, terminated, truncated, info = env.step(last_action)
     done = terminated or truncated
 
 env.close()
+pygame.quit()
