@@ -27,8 +27,8 @@ This project runs a Gymnasium simulator controlled by EEG segments selected usin
 
 ## Action mapping
 - Relax (1): `[0.0, 0.0, 0.0]`
-- Left (2): `[-0.5, 0.0, 0.0]`
-- Right (3): `[0.0, 0.5, 0.0]`
+- Left (2): `[-1.0, 0.0, 0.0]`
+- Right (3): `[1.0, 0.0, 0.0]`
 - Both (4): `[0.0, 0.5, 0.0]`
 - Feet (5): `[0.0, 0.0, 1.0]`
 
