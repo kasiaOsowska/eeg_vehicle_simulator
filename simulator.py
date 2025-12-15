@@ -17,7 +17,7 @@ def read_event_id():
         return 5
     return 1
 
-env = gym.make("CarRacing-v3", render_mode="human")
+env = gym.make("CarRacing-v3", render_mode="human",  max_episode_steps=10_000_000)
 obs, info = env.reset()
 
 done = False
@@ -25,13 +25,14 @@ last_action = [0.0, 0.0, 0.0]
 
 INTERVAL_MS = 1000
 next_update = pygame.time.get_ticks()
+all_events_id = {1: 'Relax', 2: 'Left', 3: 'Right', 4: 'Both', 5: 'Feet'}
 
 while not done:
     now = pygame.time.get_ticks()
 
     if now >= next_update:
         event_id = read_event_id()
-        last_action = get_eeg_action(event_id)
+        last_action = get_eeg_action(event_id, all_events_id)
         next_update = now + INTERVAL_MS
 
     obs, reward, terminated, truncated, info = env.step(last_action)

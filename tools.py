@@ -51,12 +51,7 @@ def get_freq(epochs, fmin=1., fmax=50.):
     return X, freqs
 
 
-
-def get_training_data():
-
-    raw_fnames = [r"Konrad/KONRAD-1_sciskanie_run1_20251202_194514_raw.fif",
-                  r"Konrad/KONRAD-2_sciskanie_run1_20251202_203846_raw.fif",
-                  r"Konrad/KONRAD-4_ruszanie_run1_20251202_205706_raw.fif"]
+def get_epochs(all_events_id, raw_fnames):
 
     raw = concatenate_raws([read_raw_fif(f, preload=True) for f in raw_fnames])
     eeg_channels = ["A1", "A2", "A3", "A4", "A5", "A6", "A7", "A8", "A9", "A10", "A11", "A12", "A13", "A14", "A15",
@@ -86,15 +81,11 @@ def get_training_data():
     raw.rename_channels(konrad_mapping)
 
     events, _ = mne.events_from_annotations(raw)
-    all_events_id = {1: 'Relax', 2: 'Left', 3: 'Right', 4: 'Both', 5: 'Feet'}
-    no_feet = {1: 'Relax', 2: 'Left', 3: 'Right', 4: 'Both'}
-    left_right_events_id = {1: 'Relax', 2: 'Left', 3: 'Right'}
     montage = mne.channels.make_standard_montage('standard_1020')
     raw.set_montage(montage)
+    raw.set_eeg_reference('average', projection=True)
 
     mapping = {v: k for k, v in all_events_id.items()}
-    left_right_mapping = {v: k for k, v in left_right_events_id.items()}
-    no_feet_mapping = {v: k for k, v in no_feet.items()}
     task_margin = 0.5
     task_end = 4.5
     reject_criteria = dict(
@@ -111,39 +102,31 @@ def get_training_data():
         preload=True,
         reject=reject_criteria
     )
-    """
-    epochs.plot()
-    plt.show()
-    """
+    return epochs
 
-    sss = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=42)
-    train_idx, rest_idx = next(sss.split(np.zeros(len(epochs.events[:, -1])), epochs.events[:, -1]))
+
+def get_training_data(all_events_id, raw_fnames):
+    epochs = get_epochs(all_events_id, raw_fnames)
+
+
+    sss = StratifiedShuffleSplit(n_splits=1, test_size=0.1, random_state=42)
+    train_idx, test_idx = next(sss.split(np.zeros(len(epochs.events[:, -1])), epochs.events[:, -1]))
 
     train_epochs = epochs[train_idx]
-    rest_epochs = epochs[rest_idx]
+    test_epochs = epochs[test_idx]
 
     print(f"Train epochs: {len(train_epochs)}")
-    print(f"Test+Valid epochs: {len(rest_idx)}")
+    print(f"Test epochs: {len(test_idx)}")
 
-    sss_valid = StratifiedShuffleSplit(n_splits=1, test_size=0.5, random_state=42)
-    test_idx, valid_idx = next(sss_valid.split(np.zeros(len(rest_epochs.events[:, -1])), rest_epochs.events[:, -1]))
-
-    test_epochs = rest_epochs[test_idx]
-    valid_epochs = rest_epochs[valid_idx]
-
-    print(f"Test epochs: {len(test_epochs)}")
-    print(f"Valid epochs: {len(valid_epochs)}")
 
     segment_length = 2.0
     step = 0.5
 
     splitted_test_epochs = split_epochs_into_segments(test_epochs, segment_length, step)
     splitted_train_epochs = split_epochs_into_segments(train_epochs, segment_length, step)
-    splitted_valid_epochs = split_epochs_into_segments(valid_epochs, segment_length, step)
 
     y_train = splitted_train_epochs.events[:, -1]
     y_test = splitted_test_epochs.events[:, -1]
-    y_valid = splitted_valid_epochs.events[:, -1]
 
     print("X_train")
     print(len(splitted_train_epochs))
@@ -153,8 +136,4 @@ def get_training_data():
     print(len(splitted_test_epochs))
     print("y_test")
     print(len(y_test))
-    print("X_valid")
-    print(len(splitted_valid_epochs))
-    print("y_valid")
-    print(len(y_valid))
-    return splitted_train_epochs, y_train, splitted_test_epochs, y_test, splitted_valid_epochs, y_valid
+    return splitted_train_epochs, y_train, splitted_test_epochs, y_test
