@@ -1,6 +1,6 @@
 from PyQt6.QtCore import QObject, QTimer, pyqtSignal
 from .lsl_io import DataHandler, PredictionBroadcaster
-from .classifiers import BaseClassifier, CSPSVMClassifier, MockClassifier
+from .classifiers import BaseClassifier
 from .preprocessor import EEGPreprocessor
 import numpy as np
 

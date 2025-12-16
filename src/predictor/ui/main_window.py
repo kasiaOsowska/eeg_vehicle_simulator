@@ -4,7 +4,7 @@ from PyQt6.QtCore import Qt, pyqtSlot, QTimer
 import pyqtgraph as pg
 import numpy as np
 from ..core.engine import PredictorEngine
-from ..core.classifiers import MockClassifier, CSPSVMClassifier
+from ..core.classifiers import GroundTruthClassifier
 from ...common.constants import LSLChannel
 
 class ClassifierWidget(QGroupBox):
@@ -182,7 +182,7 @@ class PredictorWindow(QMainWindow):
         main_layout.addWidget(scroll)
         
     def load_defaults(self):
-        self.add_classifier_ui(MockClassifier())
+        self.add_classifier_ui(GroundTruthClassifier())
         
     def add_classifier_ui(self, clf):
         self.engine.add_classifier(clf)

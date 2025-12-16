@@ -79,7 +79,8 @@ class DataHandler:
             
         required_samples = int(duration_sec * self.srate)
         if self._total_samples < required_samples:
-            print("Not enough data yet, returning what we have")
+            print("Not enough data yet, returning None")
+            return None, None
         
         # Flatten buffer
         # In a high-perf scenario, we might optimize this. 

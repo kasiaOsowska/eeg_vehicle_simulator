@@ -1,8 +1,9 @@
 from abc import ABC, abstractmethod
 import joblib
 import numpy as np
-import scipy.signal as signal
-from ...common.constants import LSLChannel
+import time
+import threading
+from pylsl import resolve_streams, StreamInlet, local_clock, proc_clocksync
 
 class BaseClassifier(ABC):
     def __init__(self):
@@ -85,9 +86,74 @@ class CSPSVMClassifier(BaseClassifier):
             # classes-1 because the classes are 1-based, and we want 0-based indexing
             full_probs = np.zeros(5)
             full_probs[classes-1] = probs
-            
             return full_probs
-            
         except Exception as e:
             print(f"Prediction error: {e}")
             return np.zeros(5)
+
+class GroundTruthClassifier(BaseClassifier):
+    def __init__(self, target_stream_name: str = "test-player"):
+        super().__init__()
+        self._name = "Ground Truth"
+        self._target = target_stream_name
+        
+        # Determine annotation stream name
+        # User says: original name + "-annotations"
+        self.annot_stream_name = f"{self._target}-annotations"
+        
+        self.latest_label_idx = 0 # Default Relax
+        self.running = True
+        self.thread = threading.Thread(target=self._listen_loop, daemon=True)
+        self.thread.start()
+        
+    @property
+    def name(self):
+        return self._name
+
+    def _listen_loop(self):
+        print(f"GroundTruth: Looking for {self.annot_stream_name}...")
+        streams = resolve_streams(wait_time=5.0)
+        target = None
+        for s in streams:
+            if s.name() == self.annot_stream_name:
+                target = s
+                break
+        
+        if not target:
+            print(f"GroundTruth: Could not find stream {self.annot_stream_name}")
+            return
+            
+        print(f"GroundTruth: Connected to {target.name()} ({target.type()})")
+        inlet = StreamInlet(target, processing_flags=proc_clocksync)
+        
+        while self.running:
+            try:
+                sample, ts = inlet.pull_sample(timeout=1.0)
+                if sample:
+                    # Sync check, see notes: https://mne.tools/mne-lsl/stable/generated/api/mne_lsl.player.PlayerLSL.html
+                    now = local_clock()
+                    delay = ts - now
+                    if delay > 0:
+                        time.sleep(delay)
+                        
+                    # We expect exactly 5 channels corresponding to '1'..'5' which map 1:1 to Relax(0)..Feet(4)
+                    # sample is a list of floats, e.g. [0, 1, 0, 0, 0]
+                    # We accept 1 or -1 as active
+                    arr = np.abs(np.array(sample))
+                    
+                    # Find max. If all zero, remain the same
+                    if np.max(arr) > 0.1:
+                        self.latest_label_idx = np.argmax(arr)
+                    
+            except Exception as e:
+                print(f"GroundTruth Error: {e}")
+                time.sleep(1.0)
+
+    def predict_proba(self, data: np.ndarray, fs: float) -> np.ndarray:
+        # Ignore EEG data, return ground truth
+        probs = np.zeros(5)
+        if 0 <= self.latest_label_idx < 5:
+            probs[self.latest_label_idx] = 1.0
+        else:
+            print(f"GroundTruth: Invalid label index: {self.latest_label_idx}")
+        return probs
