@@ -20,4 +20,10 @@ The system is decoupled to allow flexible testing, model comparison, and distrib
 
 ### Prerequisites
 *   Python 3.10+
-*   Dependencies: `numpy`, `scipy`, `pylsl`, `pyqt6`, `pyqtgraph`, `gymnasium[box2d]`, `pygame`, `joblib`, `mne` (requirements.txt)
+*   Dependencies: `numpy`, `scipy`, `pylsl`, `pyqt6`, `pyqtgraph`, `pygame`, `joblib`, `mne` (see requirements.txt)
+
+### Installation
+```bash
+pip install -r requirements.txt
+pip install -e lib/Gymnasium
+```

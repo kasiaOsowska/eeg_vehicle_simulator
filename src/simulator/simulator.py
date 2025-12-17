@@ -21,7 +21,7 @@ def main():
     strategy_mgr = StrategyManager()
     
     # Setup environment
-    env = gym.make("CarRacing-v3", render_mode="human", max_episode_steps=10_000_000)
+    env = gym.make("WheelchairRacing-v0", render_mode="human", max_episode_steps=10_000_000)
     obs, info = env.reset()
     screen = pygame.display.get_surface()
     width, height = screen.get_size()
