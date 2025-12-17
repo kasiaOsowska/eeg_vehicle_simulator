@@ -111,16 +111,27 @@ class GroundTruthClassifier(BaseClassifier):
         return self._name
 
     def _listen_loop(self):
-        print(f"GroundTruth: Looking for {self.annot_stream_name}...")
-        streams = resolve_streams(wait_time=5.0)
         target = None
-        for s in streams:
-            if s.name() == self.annot_stream_name:
-                target = s
-                break
+        retries = 0
+        max_retries = 3
+        while target is None and self.running and retries < max_retries:
+            print(f"GroundTruth: Looking for {self.annot_stream_name} (attempt {retries + 1}/{max_retries})...")
+            streams = resolve_streams(wait_time=5.0)
+            for s in streams:
+                if s.name() == self.annot_stream_name:
+                    target = s
+                    break
+            
+            if not target:
+                retries += 1
+                if retries < max_retries:
+                    print(f"GroundTruth: Could not find stream {self.annot_stream_name}, retrying...")
+                else:
+                    print(f"GroundTruth: Failed to find stream {self.annot_stream_name} after {max_retries} attempts. Exiting listener.")
+                    return
         
-        if not target:
-            print(f"GroundTruth: Could not find stream {self.annot_stream_name}")
+        if not self.running: # If loop exited because self.running became False
+            print("GroundTruth: Listener stopped before finding stream.")
             return
             
         print(f"GroundTruth: Connected to {target.name()} ({target.type()})")
