@@ -75,8 +75,12 @@ class CSPSVMClassifier(BaseClassifier):
         return "CSP+SVM"
 
     def predict_proba(self, data: np.ndarray, fs: float) -> np.ndarray:
+        # Check magnitude of data and if it's too big, scale it down
+        if np.max(np.abs(data)) > 1e-6:
+            data = data * 1e-6
+        
         # Prepare for prediction (1, ch, time)
-        X = data[np.newaxis, :, :] 
+        X = data[np.newaxis, :, :]
         
         try:
             probs = self.model.predict_proba(X)[0] 
