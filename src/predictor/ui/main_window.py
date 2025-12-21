@@ -138,6 +138,8 @@ class PredictorWindow(QMainWindow):
         self.engine.error_occurred.connect(self.on_error)
         
         self.widgets = {} # name -> ClassifierWidget
+        self.classifier_checkboxes = {}  # name -> QCheckBox
+        self.available_classifiers = {}  # name -> Classifier instance
         self.ground_truth_classifier = None
         
         self.init_ui()
@@ -185,6 +187,12 @@ class PredictorWindow(QMainWindow):
         self.history_slider.valueChanged.connect(self.update_history_length)
         top_bar.addWidget(self.history_slider)
         
+        top_bar.addStretch()  # Push classifier selection to the right
+        
+        # Classifier Selection
+        top_bar.addWidget(QLabel("Show:"))
+        self.classifier_checkboxes = {}
+        
         main_layout.addLayout(top_bar)
         
         # Scroll Area for Classifiers
@@ -195,6 +203,34 @@ class PredictorWindow(QMainWindow):
         scroll.setWidget(self.container)
         
         main_layout.addWidget(scroll)
+        
+    def set_available_classifiers(self, classifiers_dict):
+        """Set available classifiers and create selection checkboxes"""
+        self.available_classifiers = classifiers_dict
+        
+        # Find the top bar layout (first layout in main layout)
+        main_layout = self.centralWidget().layout()
+        top_bar = main_layout.itemAt(0).layout()
+        
+        # Add checkboxes for each classifier
+        for clf_name in sorted(classifiers_dict.keys()):
+            cb = QCheckBox(clf_name)
+            cb.setChecked(True)  # Show all by default
+            cb.toggled.connect(lambda checked, name=clf_name: self.toggle_classifier(name, checked))
+            top_bar.addWidget(cb)
+            self.classifier_checkboxes[clf_name] = cb
+            
+            # Add classifier to UI initially
+            self.add_classifier_ui(classifiers_dict[clf_name])
+    
+    def toggle_classifier(self, clf_name, show):
+        """Show or hide a classifier widget"""
+        if clf_name in self.widgets:
+            widget = self.widgets[clf_name]
+            if show:
+                widget.show()
+            else:
+                widget.hide()
         
     def load_defaults(self):
         self.ground_truth_classifier = GroundTruthClassifier()
