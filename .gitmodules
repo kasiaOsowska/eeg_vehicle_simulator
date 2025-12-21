@@ -1,0 +1,8 @@
+[submodule "lib/Gymnasium"]
+	path = lib/Gymnasium
+	url = https://github.com/luluu9/Gymnasium.git
+	branch = wheelchair_env
+[submodule "Gymnasium"]
+	path = Gymnasium
+	url = https://github.com/luluu9/Gymnasium.git
+	branch = wheelchair_env
